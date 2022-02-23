@@ -1,0 +1,4 @@
+requests~=2.26.0
+pycryptodome==3.11.0
+dicttoxml==1.7
+requests_cache==0.9.1
