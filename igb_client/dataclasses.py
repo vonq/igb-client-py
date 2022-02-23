@@ -1,3 +1,4 @@
+import abc
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -9,7 +10,7 @@ class JobBoard:
     name: str
     klass: str
     instructions: Optional[str]
-    compliance: str
+    compliance: Optional[str]
     logo: Optional[str] = None
     classifications: Optional[list] = field(default_factory=list)
     moc: Optional[dict] = field(default_factory=dict)
@@ -31,13 +32,42 @@ class BoardFacet:
     label: str
 
 
+def _to_igb_credential_pairs(credentials: dict):
+    return [{"name": k, "value": v} for k, v in credentials.items()]
+
+
 @dataclass
-class ATSCredential:
+class Credential(abc.ABC):
+    credentials: dict
+
+    @abc.abstractmethod
+    def to_xml(self):
+        pass
+
+
+@dataclass
+class ContractCredential(Credential):
+    job_board: JobBoard = field(default_factory=JobBoard)
+
+    def to_xml(self):
+        return dicttoxml({
+            "jobboards": [
+                {
+                    "jobboard": {
+                        "class": self.job_board.klass,
+                        "credentials": _to_igb_credential_pairs(self.credentials)
+                    },
+                }
+            ]
+        }, custom_root="MyContract")
+
+
+@dataclass
+class ATSCredential(Credential):
     ats_id: str
     ats_name: str
     company_name: str
     company_id: str
-    credentials: dict
 
     def to_xml(self):
         return dicttoxml({

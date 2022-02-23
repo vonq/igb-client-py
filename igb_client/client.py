@@ -27,7 +27,7 @@ class IGBClientBase:
             cls._instance.__init__(api_key, environment_id, credentials_storage_key)
         return cls._instance
 
-    def encrypt_credentials(self, credentials: ATSCredential) -> ATSCredential:
+    def encrypt_credentials(self, credentials: Credential) -> Credential:
         credentials.credentials = {
             k: AESCypher(self._credentials_storage_key).encrypt(v)
             for k, v in credentials.credentials.items()
@@ -36,9 +36,9 @@ class IGBClientBase:
 
 
 class IGBCredentials(IGBClientBase):
-    def post(self, credentials: ATSCredential) -> bool:
+    def post(self, credentials: Union[ATSCredential, ContractCredential]) -> bool:
         resp = self.session.post(
-            self.base_url.format(environment_id=self._environment_id),
+            self._base_url.format(view="credentials"),
             data=self.encrypt_credentials(credentials).to_xml()
         )
         if resp.ok:
