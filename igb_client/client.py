@@ -1,20 +1,22 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 
 import requests_cache
 
-from igb_client.dataclasses import JobBoard, ATSCredential
+from igb_client.dataclasses import JobBoard, ATSCredential, ContractCredential, Credential
 from igb_client.encrypt import AESCypher
 from igb_client.parse import parse_igb_xml_payload
 
 
 class IGBClientBase:
     _instance = None
-    base_url = "https://api.ingoedebanen.nl/apipartner/hapi/v1/{environment_id}/"
+    _base_url = "{base_url}/{environment_id}/{view}"
     _credentials_storage_key = None
 
-    def __init__(self, api_key: str, environment_id: str, credentials_storage_key: str):
+    def __init__(self, api_key: str, environment_id: str, credentials_storage_key: str,
+                 base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1"):
         self._environment_id = environment_id
         self._credentials_storage_key = credentials_storage_key
+        self._base_url = self._base_url.format(base_url=base_url, environment_id=environment_id)
 
         self.session = requests_cache.CachedSession('hapi_ofccp_cache')
         self.session.headers.update({
@@ -49,7 +51,7 @@ class IGBCredentials(IGBClientBase):
 class IGBJobBoards(IGBClientBase):
     def list(self) -> Optional[List[JobBoard]]:
         resp = self.session.get(
-            self.base_url.format(environment_id=self._environment_id),
+            self._base_url.format(view="jobboards"),
         )
         if resp.ok:
             job_boards = resp.json()["HAPI"]["jobboards"]
@@ -63,7 +65,9 @@ class IGBJobBoards(IGBClientBase):
             ]
 
     def detail(self, job_board: str) -> Optional[JobBoard]:
-        resp = self.session.get(f"/{job_board}")
+        resp = self.session.get(
+            self._base_url.format(view=f"jobboards/{job_board}")
+        )
         if resp.ok:
             job_board = resp.json()["HAPI"]["jobboard"]
             if job_board:
@@ -80,21 +84,17 @@ class IGBJobBoards(IGBClientBase):
 
 class IGBFacets(IGBClientBase):
     def get_board_facets(
-        self, job_board: str, facet_name: str, credentials: dict, term: str = None
+            self, credentials: ContractCredential, facet_name: str, term: str = None
     ) -> List[Dict]:
-        autocomplete_url = (
-            self.base_url.format(environment_id=self._environment_id)
-            + f"/{job_board}/facet/{facet_name}/custom"
+        autocomplete_url = self._base_url.format(
+            view=f"/{credentials.job_board.klass}/facet/{facet_name}/custom"
         )
-        params = {
-            k: AESCypher(self._credentials_storage_key).encrypt(v)
-            for k, v in credentials.items()
-        }
+        params = self.encrypt_credentials(credentials).credentials
 
         if term:
             params["term"] = term
 
-        resp = self.session(
+        resp = self.session.post(
             autocomplete_url,
             json={"params": params},
         )
@@ -107,17 +107,13 @@ class IGBFacets(IGBClientBase):
         return []
 
     def validate(
-        self, job_board: str, facet_name: str, credentials: dict, keys: list
+            self, credentials: ContractCredential, facet_name: str, keys: list
     ) -> bool:
-        validate_url = (
-            self.base_url.format(environment_id=self._environment_id)
-            + f"/{job_board}/facet/{facet_name}/custom/validate"
+        validate_url = self._base_url.format(
+            view=f"jobboards/{credentials.job_board.klass}/facet/{facet_name}/custom/validate"
         )
 
-        params = {
-            k: AESCypher(self._credentials_storage_key).encrypt(v)
-            for k, v in credentials.items()
-        }
+        params = self.encrypt_credentials(credentials).credentials
 
         params["keys"] = [{"key": key} for key in keys]
 
