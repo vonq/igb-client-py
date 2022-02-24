@@ -1,4 +1,5 @@
 import base64
+import copy
 from typing import List, Dict, Optional, Union
 
 import requests_cache
@@ -32,14 +33,16 @@ class IGBClientBase:
             cls._instance.__init__(api_key, environment_id, credentials_storage_key, credentials_transport_key)
         return cls._instance
 
-    def encrypt_credentials(self, credentials: Credential) -> Credential:
+    def encrypt_credentials(self, decrypted_credentials: Credential) -> Credential:
+        credentials = copy.deepcopy(decrypted_credentials)
         credentials.credentials = {
             k: AESCypher(self._credentials_storage_key).encrypt(v)
             for k, v in credentials.credentials.items()
         }
         return credentials
 
-    def decrypt_credentials(self, credentials: Credential) -> Credential:
+    def decrypt_credentials(self, encrypted_credentials: Credential) -> Credential:
+        credentials = copy.deepcopy(encrypted_credentials)
         cipher = AESCypher(self._credentials_storage_key)
         credentials.credentials = {
             k: base64.b64decode(cipher.decrypt(v)).decode()
@@ -47,7 +50,8 @@ class IGBClientBase:
         }
         return credentials
 
-    def transport_credentials(self, credentials: Credential) -> Credential:
+    def transport_credentials(self, decrypted_credentials: Credential) -> Credential:
+        credentials = copy.deepcopy(decrypted_credentials)
         cipher = AESCypher(self._credentials_transport_key)
         credentials.credential = {k: cipher.encrypt(v) for k, v in credentials.credentials.items()}
         return credentials
