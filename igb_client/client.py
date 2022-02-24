@@ -1,3 +1,4 @@
+import base64
 from typing import List, Dict, Optional, Union
 
 import requests_cache
@@ -11,11 +12,13 @@ class IGBClientBase:
     _instance = None
     _base_url = "{base_url}/{environment_id}/{view}"
     _credentials_storage_key = None
+    _credentials_transport_key = None
 
     def __init__(self, api_key: str, environment_id: str, credentials_storage_key: str,
-                 base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1"):
+                 credentials_transport_key: str, base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1"):
         self._environment_id = environment_id
         self._credentials_storage_key = credentials_storage_key
+        self._credentials_transport_key = credentials_transport_key
         self._base_url = self._base_url.format(base_url=base_url, environment_id=environment_id)
 
         self.session = requests_cache.CachedSession('hapi_ofccp_cache')
@@ -23,10 +26,10 @@ class IGBClientBase:
             "X-IGB-Api-Key": api_key
         })
 
-    def __new__(cls, api_key: str, environment_id: str, credentials_storage_key: str):
+    def __new__(cls, api_key: str, environment_id: str, credentials_storage_key: str, credentials_transport_key: str):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.__init__(api_key, environment_id, credentials_storage_key)
+            cls._instance.__init__(api_key, environment_id, credentials_storage_key, credentials_transport_key)
         return cls._instance
 
     def encrypt_credentials(self, credentials: Credential) -> Credential:
@@ -36,12 +39,25 @@ class IGBClientBase:
         }
         return credentials
 
+    def decrypt_credentials(self, credentials: Credential) -> Credential:
+        cipher = AESCypher(self._credentials_storage_key)
+        credentials.credentials = {
+            k: base64.b64decode(cipher.decrypt(v)).decode()
+            for k, v in credentials.credentials.items()
+        }
+        return credentials
+
+    def transport_credentials(self, credentials: Credential) -> Credential:
+        cipher = AESCypher(self._credentials_transport_key)
+        credentials.credential = {k: cipher.encrypt(v) for k, v in credentials.credentials.items()}
+        return credentials
+
 
 class IGBCredentials(IGBClientBase):
     def post(self, credentials: Union[ATSCredential, ContractCredential]) -> bool:
         resp = self.session.post(
             self._base_url.format(view="credentials"),
-            data=self.encrypt_credentials(credentials).to_xml()
+            data=self.transport_credentials(credentials).to_xml()
         )
         if resp.ok:
             return True
