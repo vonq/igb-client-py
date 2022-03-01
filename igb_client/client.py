@@ -90,6 +90,8 @@ class IGBJobBoards(IGBClientBase):
                 name=job_board["jobboard"].get("name"),
                 klass=job_board["jobboard"].get("class"),
                 logo=job_board["jobboard"].get("logo"),
+                compliance=job_board["jobboard"].get("compliance"),
+                classifications=job_board["jobboard"].get("classifications"),
             )
             for job_board in job_boards
         ]
