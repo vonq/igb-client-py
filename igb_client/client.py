@@ -30,7 +30,9 @@ class IGBClientBase:
             "X-IGB-Api-Key": api_key
         })
 
-    def __new__(cls, api_key: str, environment_id: str, credentials_storage_key: str, credentials_transport_key: str):
+    def __new__(cls, api_key: str, environment_id: str, credentials_storage_key: str,
+                credentials_transport_key: str, base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1",
+                expire_after: Union[None, int, float, str, datetime, timedelta] = -1):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__init__(api_key, environment_id, credentials_storage_key, credentials_transport_key)
