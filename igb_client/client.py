@@ -9,6 +9,8 @@ from igb_client.dataclasses import JobBoard, ATSCredential, ContractCredential, 
 from igb_client.encrypt import AESCypher
 from igb_client.parse import parse_igb_xml_payload
 
+class IGBClientError(Exception):
+    pass
 
 class IGBClientBase:
     _instance = None
@@ -79,33 +81,37 @@ class IGBJobBoards(IGBClientBase):
         resp = self.session.get(
             self._base_url.format(view="jobboards"),
         )
-        if resp.ok:
-            job_boards = resp.json()["HAPI"]["jobboards"]
-            return [
-                JobBoard(
-                    name=job_board["jobboard"].get("name"),
-                    klass=job_board["jobboard"].get("class"),
-                    logo=job_board["jobboard"].get("logo"),
-                )
-                for job_board in job_boards
-            ]
+        if not resp.ok:
+            raise IGBClientError("Error when connecting to IGB")
+
+        job_boards = resp.json()["HAPI"]["jobboards"]
+        return [
+            JobBoard(
+                name=job_board["jobboard"].get("name"),
+                klass=job_board["jobboard"].get("class"),
+                logo=job_board["jobboard"].get("logo"),
+            )
+            for job_board in job_boards
+        ]
 
     def detail(self, job_board: str) -> Optional[JobBoard]:
         resp = self.session.get(
             self._base_url.format(view=f"jobboards/{job_board}")
         )
-        if resp.ok:
-            job_board = resp.json()["HAPI"]["jobboard"]
-            if job_board:
-                job_board = parse_igb_xml_payload(job_board)
-                return JobBoard(
-                    name=job_board.get("name"),
-                    klass=job_board.get("class"),
-                    moc=job_board.get("MOC"),
-                    instructions=job_board.get("instructions"),
-                    ofccp=job_board.get("OFCCP"),
-                    facets=job_board.get("facets"),
-                )
+        if not resp.ok:
+            raise IGBClientError("Error when connecting to IGB")
+
+        job_board = resp.json()["HAPI"]["jobboard"]
+        if job_board:
+            job_board = parse_igb_xml_payload(job_board)
+            return JobBoard(
+                name=job_board.get("name"),
+                klass=job_board.get("class"),
+                moc=job_board.get("MOC"),
+                instructions=job_board.get("instructions"),
+                ofccp=job_board.get("OFCCP"),
+                facets=job_board.get("facets"),
+            )
 
 
 class IGBFacets(IGBClientBase):
@@ -125,12 +131,13 @@ class IGBFacets(IGBClientBase):
             json={"params": params},
         )
 
-        if resp.ok:
-            return [
-                {"key": item["key"], "label": item["label"]}
-                for item in parse_igb_xml_payload(resp.json()).get("options", [])
-            ]
-        return []
+        if not resp.ok:
+            raise IGBClientError("Error when connecting to IGB")
+
+        return [
+            {"key": item["key"], "label": item["label"]}
+            for item in parse_igb_xml_payload(resp.json()).get("options", [])
+        ]
 
     def validate(
             self, credentials: ContractCredential, facet_name: str, keys: list
@@ -148,6 +155,7 @@ class IGBFacets(IGBClientBase):
             json={"params": params},
         )
 
-        if resp.ok:
-            return resp.json().get("valid", False)
-        return False
+        if not resp.ok:
+            raise IGBClientError("Error when connecting to IGB")
+
+        return resp.json().get("valid", False)
