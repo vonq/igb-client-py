@@ -25,7 +25,7 @@ class IGBClientBase:
         self._base_url = self._base_url.format(base_url=base_url, environment_id=environment_id, view="{view}")
 
         self.session = requests_cache.CachedSession(f"igb_client_{environment_id}",
-                                                    expire_after=expire_after.total_seconds())
+                                                    expire_after=expire_after)
         self.session.headers.update({
             "X-IGB-Api-Key": api_key
         })
