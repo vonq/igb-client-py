@@ -35,7 +35,8 @@ class IGBClientBase:
                 expire_after: Union[None, int, float, str, datetime, timedelta] = -1):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.__init__(api_key, environment_id, credentials_storage_key, credentials_transport_key)
+            cls._instance.__init__(api_key, environment_id, credentials_storage_key, credentials_transport_key,
+                                   base_url, expire_after)
         return cls._instance
 
     def encrypt_credentials(self, decrypted_credentials: Credential) -> Credential:
