@@ -109,8 +109,8 @@ class IGBJobBoards(IGBClientBase):
                 klass=job_board.get("class"),
                 moc=job_board.get("MOC"),
                 instructions=job_board.get("instructions"),
-                classifications=job_board.get("classifications"),
                 ofccp=job_board.get("OFCCP"),
+                classifications=job_board.get("OFCCP", {}).get("classifications"),
                 facets=job_board.get("facets"),
             )
 
