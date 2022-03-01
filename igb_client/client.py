@@ -22,10 +22,10 @@ class IGBClientBase:
         self._environment_id = environment_id
         self._credentials_storage_key = credentials_storage_key
         self._credentials_transport_key = credentials_transport_key
-        self._base_url = self._base_url.format(base_url=base_url, environment_id=environment_id)
+        self._base_url = self._base_url.format(base_url=base_url, environment_id=environment_id, view="{view}")
 
         self.session = requests_cache.CachedSession(f"igb_client_{environment_id}",
-                                                    expire_after=expire_after.total_seconds(), view="{view}")
+                                                    expire_after=expire_after.total_seconds())
         self.session.headers.update({
             "X-IGB-Api-Key": api_key
         })
