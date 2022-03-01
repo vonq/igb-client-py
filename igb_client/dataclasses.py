@@ -9,8 +9,8 @@ from dicttoxml import dicttoxml
 class JobBoard:
     name: str
     klass: str
-    instructions: Optional[str]
-    compliance: Optional[str]
+    instructions: Optional[str] = None
+    compliance: Optional[str] = None
     logo: Optional[str] = None
     classifications: Optional[list] = field(default_factory=list)
     moc: Optional[dict] = field(default_factory=dict)
