@@ -73,11 +73,11 @@ class ATSCredential(Credential):
         return dicttoxml({
             "ATS": {
                 "name": self.ats_name,
-                "id": self.ats_id
+                "id": str(self.ats_id)
             },
             "company": {
                 "name": self.company_name,
-                "id": self.company_id,
+                "id": str(self.company_id),
                 "credentials": self.credentials
             }
         }, custom_root="OFCCP")
