@@ -80,6 +80,7 @@ class ATSCredential(Credential):
                 "company": {
                     "name": self.company_name,
                     "id": str(self.company_id),
-                    "credentials": self.credentials
+                    "credentials": [{"name": "", "value": ""}] if not self.credentials
+                    else [{"name": k, "value": v} for k, v in self.credentials.items()]
                 }
             }}, root=False, attr_type=False)
