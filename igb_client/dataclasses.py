@@ -59,7 +59,7 @@ class ContractCredential(Credential):
                     },
                 }
             ]
-        }, custom_root="MyContract")
+        }, custom_root="MyContract", attr_type=False)
 
 
 @dataclass
@@ -80,4 +80,4 @@ class ATSCredential(Credential):
                 "id": str(self.company_id),
                 "credentials": self.credentials
             }
-        }, custom_root="OFCCP")
+        }, custom_root="OFCCP", attr_type=False)
