@@ -1,6 +1,6 @@
 import abc
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Literal
 
 from dicttoxml import dicttoxml
 
@@ -47,11 +47,12 @@ class Credential(abc.ABC):
 
 @dataclass
 class ContractCredential(Credential):
+    destination: Literal["OFCCP", "MyContract"] = "MyContract"
     job_board: JobBoard = field(default_factory=JobBoard)
 
     def to_xml(self):
         return dicttoxml({
-            "MyContract": {
+            self.destination: {
                 "jobboards": [
                     {
                         "jobboard": {
