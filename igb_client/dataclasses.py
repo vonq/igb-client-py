@@ -36,6 +36,11 @@ def _to_igb_credential_pairs(credentials: dict):
     return [{"name": k, "value": v} for k, v in credentials.items()]
 
 
+def _xml_tag_for_list_serialization(self, parent):
+    if parent == "credentials":
+        return "credential"
+    return "item"
+
 @dataclass
 class Credential(abc.ABC):
     credentials: dict
@@ -61,7 +66,7 @@ class ContractCredential(Credential):
                         },
                     }
                 ]
-            }}, root=False, attr_type=False)
+            }}, root=False, attr_type=False, item_func=_xml_tag_for_list_serialization)
 
 
 @dataclass
@@ -84,9 +89,4 @@ class ATSCredential(Credential):
                     "credentials": [{"name": "", "value": ""}] if not self.credentials
                     else [{"name": k, "value": v} for k, v in self.credentials.items()]
                 }
-            }}, root=False, attr_type=False, item_func=self._xml_tag_for_list)
-
-    def _xml_tag_for_list(self, parent):
-        if parent == "credentials":
-            return "credential"
-        return "item"
+            }}, root=False, attr_type=False, item_func=_xml_tag_for_list_serialization)
