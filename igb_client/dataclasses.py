@@ -39,7 +39,11 @@ def _to_igb_credential_pairs(credentials: dict):
 def _xml_tag_for_list_serialization(parent):
     if parent == "credentials":
         return "credential"
+    if parent == "jobboards":
+        return "jobboard"
+
     return "item"
+
 
 @dataclass
 class Credential(abc.ABC):
@@ -60,10 +64,8 @@ class ContractCredential(Credential):
             self.destination: {
                 "jobboards": [
                     {
-                        "jobboard": {
-                            "class": self.job_board.klass,
-                            "credentials": _to_igb_credential_pairs(self.credentials)
-                        },
+                        "class": self.job_board.klass,
+                        "credentials": _to_igb_credential_pairs(self.credentials)
                     }
                 ]
             }}, root=False, attr_type=False, item_func=_xml_tag_for_list_serialization)
