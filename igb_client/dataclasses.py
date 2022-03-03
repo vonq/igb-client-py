@@ -83,4 +83,9 @@ class ATSCredential(Credential):
                     "credentials": [{"name": "", "value": ""}] if not self.credentials
                     else [{"name": k, "value": v} for k, v in self.credentials.items()]
                 }
-            }}, root=False, attr_type=False)
+            }}, root=False, attr_type=False, item_func="_xml_tag_for_list")
+
+    def _xml_tag_for_list(self, parent):
+        if parent == "credentials":
+            return "credential"
+        return "item"
