@@ -51,15 +51,16 @@ class ContractCredential(Credential):
 
     def to_xml(self):
         return dicttoxml({
-            "jobboards": [
-                {
-                    "jobboard": {
-                        "class": self.job_board.klass,
-                        "credentials": _to_igb_credential_pairs(self.credentials)
-                    },
-                }
-            ]
-        }, custom_root="MyContract", attr_type=False)
+            "MyContract": {
+                "jobboards": [
+                    {
+                        "jobboard": {
+                            "class": self.job_board.klass,
+                            "credentials": _to_igb_credential_pairs(self.credentials)
+                        },
+                    }
+                ]
+            }}, root=False, attr_type=False)
 
 
 @dataclass
@@ -71,13 +72,14 @@ class ATSCredential(Credential):
 
     def to_xml(self):
         return dicttoxml({
-            "ATS": {
-                "name": self.ats_name,
-                "id": str(self.ats_id)
-            },
-            "company": {
-                "name": self.company_name,
-                "id": str(self.company_id),
-                "credentials": self.credentials
-            }
-        }, custom_root="OFCCP", attr_type=False)
+            "OFCCP": {
+                "ATS": {
+                    "name": self.ats_name,
+                    "id": str(self.ats_id)
+                },
+                "company": {
+                    "name": self.company_name,
+                    "id": str(self.company_id),
+                    "credentials": self.credentials
+                }
+            }}, root=False, attr_type=False)
