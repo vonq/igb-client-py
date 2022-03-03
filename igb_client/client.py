@@ -61,7 +61,7 @@ class IGBClientBase:
     def transport_credentials(self, decrypted_credentials: Credential) -> Credential:
         credentials = copy.deepcopy(decrypted_credentials)
         cipher = AESCypher(self._credentials_transport_key)
-        credentials.credential = {k: cipher.encrypt(v) for k, v in credentials.credentials.items()}
+        credentials.credentials = {k: cipher.encrypt(v) for k, v in credentials.credentials.items()}
         return credentials
 
 
