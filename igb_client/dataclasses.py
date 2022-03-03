@@ -36,7 +36,7 @@ def _to_igb_credential_pairs(credentials: dict):
     return [{"name": k, "value": v} for k, v in credentials.items()]
 
 
-def _xml_tag_for_list_serialization(self, parent):
+def _xml_tag_for_list_serialization(parent):
     if parent == "credentials":
         return "credential"
     return "item"
