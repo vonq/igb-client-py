@@ -59,12 +59,19 @@ class XMLSerializable:
 @dataclass
 class Credential(abc.ABC, XMLSerializable):
     credentials: dict
+    destination: Literal["OFCCP", "MyContract"]
+
+    def asdict(self):
+        return dicttoxml(self.asdict(),
+                         root=self.destination,
+                         attr_type=False,
+                         item_func=_xml_tag_for_list_serialization)
 
 
 @dataclass
 class ContractCredential(Credential):
-    destination: Literal["OFCCP", "MyContract"] = "MyContract"
     job_board: JobBoard = field(default_factory=JobBoard)
+    destination = "MyContract"
 
     def asdict(self):
         return {
@@ -89,6 +96,7 @@ class ATSCredential(Credential):
     ats_name: str
     company_name: str
     company_id: str
+    destination = "OFCCP"
 
     def asdict(self):
         return {
@@ -104,17 +112,12 @@ class ATSCredential(Credential):
             }
         }
 
-    def to_xml(self):
-        return dicttoxml(self.asdict(),
-                         root="OFCCP",
-                         attr_type=False,
-                         item_func=_xml_tag_for_list_serialization)
-
 
 @dataclass
 class OfccpCredential(XMLSerializable):
     ats: ATSCredential = field(default_factory=ATSCredential)
     job_board_contracts: List[ContractCredential] = field(default_factory=list)
+    destination = "OFCCP"
 
     def asdict(self):
         final_dict = {}
@@ -135,6 +138,3 @@ class OfccpCredential(XMLSerializable):
             credential_merger.merge(final_dict, jbc.asdict())
 
         return final_dict
-
-    def to_xml(self):
-        dicttoxml(self.asdict(), root="OFCCP", attr_type=False, item_func=_xml_tag_for_list_serialization)
