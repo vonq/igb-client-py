@@ -67,6 +67,12 @@ class Credential(abc.ABC, XMLSerializable):
                          attr_type=False,
                          item_func=_xml_tag_for_list_serialization)
 
+    def to_xml(self):
+        return dicttoxml(self.asdict(),
+                         root=self.destination,
+                         attr_type=False,
+                         item_func=_xml_tag_for_list_serialization)
+
 
 @dataclass
 class ContractCredential(Credential):
@@ -82,12 +88,6 @@ class ContractCredential(Credential):
                 }
             ]
         }
-
-    def to_xml(self):
-        return dicttoxml(self.asdict(),
-                         root=self.destination,
-                         attr_type=False,
-                         item_func=_xml_tag_for_list_serialization)
 
 
 @dataclass
@@ -118,6 +118,12 @@ class OfccpCredential(XMLSerializable):
     ats: ATSCredential = field(default_factory=ATSCredential)
     job_board_contracts: List[ContractCredential] = field(default_factory=list)
     destination = "OFCCP"
+
+    def to_xml(self):
+        return dicttoxml(self.asdict(),
+                         root=self.destination,
+                         attr_type=False,
+                         item_func=_xml_tag_for_list_serialization)
 
     def asdict(self):
         final_dict = {}
