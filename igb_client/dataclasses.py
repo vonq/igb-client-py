@@ -61,15 +61,9 @@ class Credential(abc.ABC, XMLSerializable):
     credentials: dict
     destination: Literal["OFCCP", "MyContract"]
 
-    def asdict(self):
-        return dicttoxml(self.asdict(),
-                         root=self.destination,
-                         attr_type=False,
-                         item_func=_xml_tag_for_list_serialization)
-
     def to_xml(self):
         return dicttoxml(self.asdict(),
-                         root=self.destination,
+                         custom_root=self.destination,
                          attr_type=False,
                          item_func=_xml_tag_for_list_serialization)
 
@@ -121,7 +115,7 @@ class OfccpCredential(XMLSerializable):
 
     def to_xml(self):
         return dicttoxml(self.asdict(),
-                         root=self.destination,
+                         custom_root=self.destination,
                          attr_type=False,
                          item_func=_xml_tag_for_list_serialization)
 
