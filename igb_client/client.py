@@ -1,16 +1,21 @@
 import base64
 import copy
 from datetime import timedelta, datetime
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Type, TypeVar
 
 import requests_cache
 
-from igb_client.dataclasses import JobBoard, ATSCredential, ContractCredential, Credential
+from igb_client.dataclasses import JobBoard, ContractCredential, Credential, OfccpCredential, \
+    XMLSerializable
 from igb_client.encrypt import AESCypher
 from igb_client.parse import parse_igb_xml_payload
 
+CredentialInterface = TypeVar('CredentialInterface', bound=Credential)
+
+
 class IGBClientError(Exception):
     pass
+
 
 class IGBClientBase:
     _instance = None
@@ -41,7 +46,7 @@ class IGBClientBase:
                                    base_url, expire_after)
         return cls._instance
 
-    def encrypt_credentials(self, decrypted_credentials: Credential) -> Credential:
+    def encrypt_credentials(self, decrypted_credentials: Type[CredentialInterface]) -> Type[CredentialInterface]:
         credentials = copy.deepcopy(decrypted_credentials)
         credentials.credentials = {
             k: AESCypher(self._credentials_storage_key).encrypt(v)
@@ -49,7 +54,7 @@ class IGBClientBase:
         }
         return credentials
 
-    def decrypt_credentials(self, encrypted_credentials: Credential) -> Credential:
+    def decrypt_credentials(self, encrypted_credentials: Type[CredentialInterface]) -> Type[CredentialInterface]:
         credentials = copy.deepcopy(encrypted_credentials)
         cipher = AESCypher(self._credentials_storage_key)
         credentials.credentials = {
@@ -58,7 +63,7 @@ class IGBClientBase:
         }
         return credentials
 
-    def transport_credentials(self, decrypted_credentials: Credential) -> Credential:
+    def transport_credentials(self, decrypted_credentials: Type[CredentialInterface]) -> Type[CredentialInterface]:
         credentials = copy.deepcopy(decrypted_credentials)
         cipher = AESCypher(self._credentials_transport_key)
         credentials.credentials = {k: cipher.encrypt(v) for k, v in credentials.credentials.items()}
@@ -66,11 +71,24 @@ class IGBClientBase:
 
 
 class IGBCredentials(IGBClientBase):
-    def post(self, credentials: Union[ATSCredential, ContractCredential]) -> bool:
-        resp = self.session.post(
-            self._base_url.format(view="credentials"),
-            data=self.transport_credentials(credentials).to_xml()
-        )
+    def post(self, decrypted_credentials: Type[XMLSerializable]) -> bool:
+        if isinstance(decrypted_credentials, OfccpCredential):
+            decrypted_credentials: OfccpCredential
+            decrypted_credentials.ats = self.transport_credentials(decrypted_credentials.ats)
+            decrypted_credentials.job_board_contracts = [self.transport_credentials(jbc)
+                                                         for jbc in decrypted_credentials.job_board_contracts]
+            resp = self.session.post(
+                self._base_url.format(view="credentials"),
+                data=decrypted_credentials.to_xml()
+            )
+        elif issubclass(type(decrypted_credentials), Credential):
+            decrypted_credentials: Credential
+            resp = self.session.post(
+                self._base_url.format(view="credentials"),
+                data=self.transport_credentials(decrypted_credentials).to_xml()
+            )
+        else:
+            raise ValueError(f"Unsupported type '{type(decrypted_credentials)}'")
         if resp.ok:
             return True
         return False
