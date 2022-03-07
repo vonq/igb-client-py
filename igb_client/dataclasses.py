@@ -1,7 +1,8 @@
 import abc
 from dataclasses import dataclass, field
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
+from deepmerge import Merger
 from dicttoxml import dicttoxml
 
 
@@ -45,13 +46,19 @@ def _xml_tag_for_list_serialization(parent):
     return "item"
 
 
-@dataclass
-class Credential(abc.ABC):
-    credentials: dict
+class XMLSerializable:
+    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def to_xml(self):
-        pass
+    def to_xml(self): raise NotImplementedError
+
+    @abc.abstractmethod
+    def asdict(self): raise NotImplementedError
+
+
+@dataclass
+class Credential(abc.ABC, XMLSerializable):
+    credentials: dict
 
 
 @dataclass
@@ -59,16 +66,21 @@ class ContractCredential(Credential):
     destination: Literal["OFCCP", "MyContract"] = "MyContract"
     job_board: JobBoard = field(default_factory=JobBoard)
 
+    def asdict(self):
+        return {
+            "jobboards": [
+                {
+                    "class": self.job_board.klass,
+                    "credentials": _to_igb_credential_pairs(self.credentials)
+                }
+            ]
+        }
+
     def to_xml(self):
-        return dicttoxml({
-            self.destination: {
-                "jobboards": [
-                    {
-                        "class": self.job_board.klass,
-                        "credentials": _to_igb_credential_pairs(self.credentials)
-                    }
-                ]
-            }}, root=False, attr_type=False, item_func=_xml_tag_for_list_serialization)
+        return dicttoxml(self.asdict(),
+                         root=self.destination,
+                         attr_type=False,
+                         item_func=_xml_tag_for_list_serialization)
 
 
 @dataclass
@@ -78,17 +90,51 @@ class ATSCredential(Credential):
     company_name: str
     company_id: str
 
+    def asdict(self):
+        return {
+            "ATS": {
+                "name": self.ats_name,
+                "id": str(self.ats_id)
+            },
+            "company": {
+                "name": self.company_name,
+                "id": str(self.company_id),
+                "credentials": [{"name": "", "value": ""}] if not self.credentials
+                else [{"name": k, "value": v} for k, v in self.credentials.items()]
+            }
+        }
+
     def to_xml(self):
-        return dicttoxml({
-            "OFCCP": {
-                "ATS": {
-                    "name": self.ats_name,
-                    "id": str(self.ats_id)
-                },
-                "company": {
-                    "name": self.company_name,
-                    "id": str(self.company_id),
-                    "credentials": [{"name": "", "value": ""}] if not self.credentials
-                    else [{"name": k, "value": v} for k, v in self.credentials.items()]
-                }
-            }}, root=False, attr_type=False, item_func=_xml_tag_for_list_serialization)
+        return dicttoxml(self.asdict(),
+                         root="OFCCP",
+                         attr_type=False,
+                         item_func=_xml_tag_for_list_serialization)
+
+
+@dataclass
+class OfccpCredential(XMLSerializable):
+    ats: ATSCredential = field(default_factory=ATSCredential)
+    job_board_contracts: List[ContractCredential] = field(default_factory=list)
+
+    def asdict(self):
+        final_dict = {}
+        credential_merger = Merger(
+            # pass in a list of tuple, with the strategies you are looking to apply to each type.
+            type_strategies = [
+                (list, ["append"]),
+                (dict, ["merge"]),
+                (set, ["union"])
+            ],
+            # next, choose the fallback strategies, applied to all other types:
+            fallback_strategies=["override"],
+            # finally, choose the strategies in the case where the types conflict:
+            type_conflict_strategies=["override"]
+        )
+        credential_merger.merge(final_dict, self.ats.asdict())
+        for jbc in self.job_board_contracts:
+            credential_merger.merge(final_dict, jbc.asdict())
+
+        return final_dict
+
+    def to_xml(self):
+        dicttoxml(self.asdict(), root="OFCCP", attr_type=False, item_func=_xml_tag_for_list_serialization)
