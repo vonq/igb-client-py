@@ -137,12 +137,19 @@ class IGBJobBoards(IGBClientBase):
 
 class IGBFacets(IGBClientBase):
     def get_board_facets(
-            self, credentials: ContractCredential, facet_name: str, term: str = None
+            self,
+            credentials: Optional[ContractCredential],
+            facet_name: str,
+            term: str = None,
     ) -> List[Dict]:
         autocomplete_url = self._base_url.format(
             view=f"/{credentials.job_board.klass}/facet/{facet_name}/custom"
         )
-        params = self.encrypt_credentials(credentials).credentials
+
+        params = {}
+
+        if credentials:
+            params = self.encrypt_credentials(credentials).credentials
 
         if term:
             params["term"] = term
