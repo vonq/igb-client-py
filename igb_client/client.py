@@ -17,6 +17,8 @@ from igb_client.parse import parse_igb_xml_payload
 
 CredentialInterface = TypeVar("CredentialInterface", bound=Credential)
 
+IGB_URL = "https://api.ingoedebanen.nl/apipartner/hapi/v1"
+
 
 class IGBClientError(Exception):
     pass
@@ -34,7 +36,7 @@ class IGBClientBase:
         environment_id: str,
         credentials_storage_key: str,
         credentials_transport_key: str,
-        base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1",
+        base_url=IGB_URL,
         expire_after: Union[None, int, float, str, datetime, timedelta] = -1,
     ):
         self._environment_id = environment_id
@@ -55,7 +57,7 @@ class IGBClientBase:
         environment_id: str,
         credentials_storage_key: str,
         credentials_transport_key: str,
-        base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1",
+        base_url=IGB_URL,
         expire_after: Union[None, int, float, str, datetime, timedelta] = -1,
     ):
         if cls._instance is None:
