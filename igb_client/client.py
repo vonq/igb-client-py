@@ -138,7 +138,9 @@ class IGBJobBoards(IGBClientBase):
             self._base_url.format(view="jobboards"),
         )
         if not resp.ok:
-            raise IGBClientError("Error when connecting to IGB")
+            raise IGBClientError(
+                f"Could not get jobboard list, http responde code: {resp.status_code}"
+            )
 
         job_boards = resp.json()["HAPI"]["jobboards"]
         return [
@@ -155,7 +157,9 @@ class IGBJobBoards(IGBClientBase):
     def detail(self, job_board: str) -> Optional[JobBoard]:
         resp = self.session.get(self._base_url.format(view=f"jobboards/{job_board}"))
         if not resp.ok:
-            raise IGBClientError("Error when connecting to IGB")
+            raise IGBClientError(
+                f"Could not get jobboard detail, http responde code: {resp.status_code}"
+            )
 
         job_board = resp.json()["HAPI"]["jobboard"]
         if job_board:
@@ -196,7 +200,9 @@ class IGBFacets(IGBClientBase):
         )
 
         if not resp.ok:
-            raise IGBClientError("Error when connecting to IGB")
+            raise IGBClientError(
+                f"Could not get board facets, http responde code: {resp.status_code}"
+            )
 
         return [
             {"key": item["key"], "label": item["label"]}
@@ -220,6 +226,8 @@ class IGBFacets(IGBClientBase):
         )
 
         if not resp.ok:
-            raise IGBClientError("Error when connecting to IGB")
+            raise IGBClientError(
+                f"Could not validate, http responde code: {resp.status_code}"
+            )
 
         return resp.json().get("valid", False)
