@@ -25,7 +25,7 @@ class AESCypher:
     def decrypt(self, data: str) -> str:
         raw = b64decode(data)
         iv = raw[0 : self.block_size]
-        data = raw[self.block_size: -self.tag_size]
+        data = raw[self.block_size : -self.tag_size]
         cipher = AES.new(self.key, AES.MODE_GCM, nonce=iv)
         plaintext = cipher.decrypt(data)
         return plaintext.decode()

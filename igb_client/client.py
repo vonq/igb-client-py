@@ -5,12 +5,17 @@ from typing import List, Dict, Optional, Union, Type, TypeVar
 
 import requests_cache
 
-from igb_client.dataclasses import JobBoard, ContractCredential, Credential, OfccpCredential, \
-    XMLSerializable
+from igb_client.dataclasses import (
+    JobBoard,
+    ContractCredential,
+    Credential,
+    OfccpCredential,
+    XMLSerializable,
+)
 from igb_client.encrypt import AESCypher
 from igb_client.parse import parse_igb_xml_payload
 
-CredentialInterface = TypeVar('CredentialInterface', bound=Credential)
+CredentialInterface = TypeVar("CredentialInterface", bound=Credential)
 
 
 class IGBClientError(Exception):
@@ -23,30 +28,51 @@ class IGBClientBase:
     _credentials_storage_key = None
     _credentials_transport_key = None
 
-    def __init__(self, api_key: str, environment_id: str, credentials_storage_key: str,
-                 credentials_transport_key: str, base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1",
-                 expire_after: Union[None, int, float, str, datetime, timedelta] = -1):
+    def __init__(
+        self,
+        api_key: str,
+        environment_id: str,
+        credentials_storage_key: str,
+        credentials_transport_key: str,
+        base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1",
+        expire_after: Union[None, int, float, str, datetime, timedelta] = -1,
+    ):
         self._environment_id = environment_id
         self._credentials_storage_key = credentials_storage_key
         self._credentials_transport_key = credentials_transport_key
-        self._base_url = self._base_url.format(base_url=base_url, environment_id=environment_id, view="{view}")
+        self._base_url = self._base_url.format(
+            base_url=base_url, environment_id=environment_id, view="{view}"
+        )
 
-        self.session = requests_cache.CachedSession(f"igb_client_{environment_id}",
-                                                    expire_after=expire_after)
-        self.session.headers.update({
-            "X-IGB-Api-Key": api_key
-        })
+        self.session = requests_cache.CachedSession(
+            f"igb_client_{environment_id}", expire_after=expire_after
+        )
+        self.session.headers.update({"X-IGB-Api-Key": api_key})
 
-    def __new__(cls, api_key: str, environment_id: str, credentials_storage_key: str,
-                credentials_transport_key: str, base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1",
-                expire_after: Union[None, int, float, str, datetime, timedelta] = -1):
+    def __new__(
+        cls,
+        api_key: str,
+        environment_id: str,
+        credentials_storage_key: str,
+        credentials_transport_key: str,
+        base_url="https://api.ingoedebanen.nl/apipartner/hapi/v1",
+        expire_after: Union[None, int, float, str, datetime, timedelta] = -1,
+    ):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.__init__(api_key, environment_id, credentials_storage_key, credentials_transport_key,
-                                   base_url, expire_after)
+            cls._instance.__init__(
+                api_key,
+                environment_id,
+                credentials_storage_key,
+                credentials_transport_key,
+                base_url,
+                expire_after,
+            )
         return cls._instance
 
-    def encrypt_credentials(self, decrypted_credentials: Type[CredentialInterface]) -> Type[CredentialInterface]:
+    def encrypt_credentials(
+        self, decrypted_credentials: Type[CredentialInterface]
+    ) -> Type[CredentialInterface]:
         credentials = copy.deepcopy(decrypted_credentials)
         credentials.credentials = {
             k: AESCypher(self._credentials_storage_key).encrypt(v)
@@ -54,7 +80,9 @@ class IGBClientBase:
         }
         return credentials
 
-    def decrypt_credentials(self, encrypted_credentials: Type[CredentialInterface]) -> Type[CredentialInterface]:
+    def decrypt_credentials(
+        self, encrypted_credentials: Type[CredentialInterface]
+    ) -> Type[CredentialInterface]:
         credentials = copy.deepcopy(encrypted_credentials)
         cipher = AESCypher(self._credentials_storage_key)
         credentials.credentials = {
@@ -63,10 +91,14 @@ class IGBClientBase:
         }
         return credentials
 
-    def transport_credentials(self, decrypted_credentials: Type[CredentialInterface]) -> Type[CredentialInterface]:
+    def transport_credentials(
+        self, decrypted_credentials: Type[CredentialInterface]
+    ) -> Type[CredentialInterface]:
         credentials = copy.deepcopy(decrypted_credentials)
         cipher = AESCypher(self._credentials_transport_key)
-        credentials.credentials = {k: cipher.encrypt(v) for k, v in credentials.credentials.items()}
+        credentials.credentials = {
+            k: cipher.encrypt(v) for k, v in credentials.credentials.items()
+        }
         return credentials
 
 
@@ -74,18 +106,22 @@ class IGBCredentials(IGBClientBase):
     def post(self, decrypted_credentials: Type[XMLSerializable]) -> bool:
         if isinstance(decrypted_credentials, OfccpCredential):
             decrypted_credentials: OfccpCredential
-            decrypted_credentials.ats = self.transport_credentials(decrypted_credentials.ats)
-            decrypted_credentials.job_board_contracts = [self.transport_credentials(jbc)
-                                                         for jbc in decrypted_credentials.job_board_contracts]
+            decrypted_credentials.ats = self.transport_credentials(
+                decrypted_credentials.ats
+            )
+            decrypted_credentials.job_board_contracts = [
+                self.transport_credentials(jbc)
+                for jbc in decrypted_credentials.job_board_contracts
+            ]
             resp = self.session.post(
                 self._base_url.format(view="credentials"),
-                data=decrypted_credentials.to_xml()
+                data=decrypted_credentials.to_xml(),
             )
         elif issubclass(type(decrypted_credentials), Credential):
             decrypted_credentials: Credential
             resp = self.session.post(
                 self._base_url.format(view="credentials"),
-                data=self.transport_credentials(decrypted_credentials).to_xml()
+                data=self.transport_credentials(decrypted_credentials).to_xml(),
             )
         else:
             raise ValueError(f"Unsupported type '{type(decrypted_credentials)}'")
@@ -115,9 +151,7 @@ class IGBJobBoards(IGBClientBase):
         ]
 
     def detail(self, job_board: str) -> Optional[JobBoard]:
-        resp = self.session.get(
-            self._base_url.format(view=f"jobboards/{job_board}")
-        )
+        resp = self.session.get(self._base_url.format(view=f"jobboards/{job_board}"))
         if not resp.ok:
             raise IGBClientError("Error when connecting to IGB")
 
@@ -137,10 +171,10 @@ class IGBJobBoards(IGBClientBase):
 
 class IGBFacets(IGBClientBase):
     def get_board_facets(
-            self,
-            credentials: Optional[ContractCredential],
-            facet_name: str,
-            term: str = None,
+        self,
+        credentials: Optional[ContractCredential],
+        facet_name: str,
+        term: str = None,
     ) -> List[Dict]:
         autocomplete_url = self._base_url.format(
             view=f"/{credentials.job_board.klass}/facet/{facet_name}/custom"
@@ -168,7 +202,7 @@ class IGBFacets(IGBClientBase):
         ]
 
     def validate(
-            self, credentials: ContractCredential, facet_name: str, keys: list
+        self, credentials: ContractCredential, facet_name: str, keys: list
     ) -> bool:
         validate_url = self._base_url.format(
             view=f"jobboards/{credentials.job_board.klass}/facet/{facet_name}/custom/validate"

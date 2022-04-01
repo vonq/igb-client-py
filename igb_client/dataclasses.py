@@ -50,10 +50,12 @@ class XMLSerializable:
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def to_xml(self): raise NotImplementedError
+    def to_xml(self):
+        raise NotImplementedError
 
     @abc.abstractmethod
-    def asdict(self): raise NotImplementedError
+    def asdict(self):
+        raise NotImplementedError
 
 
 @dataclass
@@ -62,10 +64,12 @@ class Credential(abc.ABC, XMLSerializable):
     destination: Literal["OFCCP", "MyContract"]
 
     def to_xml(self):
-        return dicttoxml(self.asdict(),
-                         custom_root=self.destination,
-                         attr_type=False,
-                         item_func=_xml_tag_for_list_serialization)
+        return dicttoxml(
+            self.asdict(),
+            custom_root=self.destination,
+            attr_type=False,
+            item_func=_xml_tag_for_list_serialization,
+        )
 
 
 @dataclass
@@ -78,7 +82,7 @@ class ContractCredential(Credential):
             "jobboards": [
                 {
                     "class": self.job_board.klass,
-                    "credentials": _to_igb_credential_pairs(self.credentials)
+                    "credentials": _to_igb_credential_pairs(self.credentials),
                 }
             ]
         }
@@ -94,16 +98,14 @@ class ATSCredential(Credential):
 
     def asdict(self):
         return {
-            "ATS": {
-                "name": self.ats_name,
-                "id": str(self.ats_id)
-            },
+            "ATS": {"name": self.ats_name, "id": str(self.ats_id)},
             "company": {
                 "name": self.company_name,
                 "id": str(self.company_id),
-                "credentials": [{"name": "", "value": ""}] if not self.credentials
-                else [{"name": k, "value": v} for k, v in self.credentials.items()]
-            }
+                "credentials": [{"name": "", "value": ""}]
+                if not self.credentials
+                else [{"name": k, "value": v} for k, v in self.credentials.items()],
+            },
         }
 
 
@@ -114,24 +116,22 @@ class OfccpCredential(XMLSerializable):
     destination = "OFCCP"
 
     def to_xml(self):
-        return dicttoxml(self.asdict(),
-                         custom_root=self.destination,
-                         attr_type=False,
-                         item_func=_xml_tag_for_list_serialization)
+        return dicttoxml(
+            self.asdict(),
+            custom_root=self.destination,
+            attr_type=False,
+            item_func=_xml_tag_for_list_serialization,
+        )
 
     def asdict(self):
         final_dict = {}
         credential_merger = Merger(
             # pass in a list of tuple, with the strategies you are looking to apply to each type.
-            type_strategies = [
-                (list, ["append"]),
-                (dict, ["merge"]),
-                (set, ["union"])
-            ],
+            type_strategies=[(list, ["append"]), (dict, ["merge"]), (set, ["union"])],
             # next, choose the fallback strategies, applied to all other types:
             fallback_strategies=["override"],
             # finally, choose the strategies in the case where the types conflict:
-            type_conflict_strategies=["override"]
+            type_conflict_strategies=["override"],
         )
         credential_merger.merge(final_dict, self.ats.asdict())
         for jbc in self.job_board_contracts:
