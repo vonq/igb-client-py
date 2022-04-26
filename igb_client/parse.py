@@ -34,15 +34,3 @@ def parse_igb_xml_payload(payload: Dict) -> Dict:
         else:
             payload[key] = parse_igb_xml_payload(payload[key])
     return payload
-
-
-p = {
-    "description": "None",
-    "label": "id",
-    "name": "id",
-    "options": None,
-    "sort": 20,
-    "url": "None",
-}
-
-parse_igb_xml_payload(p)
