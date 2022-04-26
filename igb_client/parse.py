@@ -22,7 +22,6 @@ def parse_igb_xml_payload(payload: Dict) -> Dict:
         # end condition
         return payload
 
-    print(type(payload))
     for key, value in payload.items():
         if key.lower() in ["facets", "credentials", "options", "params", "rules"]:
             # only a few tags are containers in IGB's XSD
