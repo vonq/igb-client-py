@@ -26,6 +26,8 @@ def parse_igb_xml_payload(payload: Dict) -> Dict:
         if key.lower() in ["facets", "credentials", "options", "params", "rules"]:
             # only a few tags are containers in IGB's XSD
             singular_key = key.rstrip("s")
+            if not payload.get(key):
+                continue
             payload[key] = [
                 parse_igb_xml_payload(item[singular_key]) for item in payload[key]
             ]
