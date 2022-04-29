@@ -183,7 +183,7 @@ class IGBFacets(IGBClientBase):
         term: str = None,
     ) -> List[Dict]:
         autocomplete_url = self._base_url.format(
-            view=f"/{credentials.job_board.klass}/facet/{facet_name}/custom"
+            view=f"/jobboards/{credentials.job_board.klass}/facet/{facet_name}/custom"
         )
 
         params = {}
