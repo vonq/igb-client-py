@@ -2,5 +2,3 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[project]
-name = "IGB-Client"

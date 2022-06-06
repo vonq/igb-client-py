@@ -28,12 +28,11 @@ def parse_igb_xml_payload(payload: Dict) -> Dict:
             singular_key = key.rstrip("s")
             if not payload.get(key):
                 continue
-            payload[key] = []
-            for item in payload[key]:
-                if singular_key in item:
-                    payload[key].append(
-                        parse_igb_xml_payload(item[singular_key])
-                    )
+            payload[key] = [
+                parse_igb_xml_payload(item[singular_key])
+                for item in payload[key]
+                if singular_key in item
+            ]
         else:
             payload[key] = parse_igb_xml_payload(payload[key])
     return payload
