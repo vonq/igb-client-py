@@ -1,4 +1,8 @@
-from typing import Dict
+from typing import Dict, Set
+from .parse_custom import params_parser
+
+
+ROOT_FIELDS_CUSTOM_EXTRACT = {"params": params_parser}
 
 
 def parse_igb_xml_payload(payload: Dict) -> Dict:
@@ -22,12 +26,15 @@ def parse_igb_xml_payload(payload: Dict) -> Dict:
         # end condition
         return payload
 
-    for key in payload.keys():
+    for key in list(payload.keys()):
         if key.lower() in ["facets", "credentials", "options", "params", "rules"]:
             # only a few tags are containers in IGB's XSD
             singular_key = key.rstrip("s")
             if not payload.get(key):
                 continue
+            # extract additional fields that would be overwritten/lost by next iteration
+            if key in ROOT_FIELDS_CUSTOM_EXTRACT:
+                payload.update(ROOT_FIELDS_CUSTOM_EXTRACT[key](payload))
             payload[key] = [
                 parse_igb_xml_payload(item[singular_key])
                 for item in payload[key]
