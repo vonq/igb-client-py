@@ -2,9 +2,9 @@ from typing import Any, Dict, List, Set
 from collections import defaultdict
 
 
-def params_parser(payload: Dict) -> Dict[str, List[Any]]:
+def params_extra_parser(payload: Dict) -> Dict[str, Dict]:
     """
-    Converts from:
+    Extracts params with special source mapping from:
     {
         "name": "\\IGB\\Property\\Custom\\Doelsite\\Vdab\\Sjabloon",
         "params": [
@@ -12,15 +12,21 @@ def params_parser(payload: Dict) -> Dict[str, List[Any]]:
             {"param": "term1"},
             {"param": "term2"},
             {"term1": {"field": "title"}},
-            {"term2": {"field": "description"}},
+            {"term2": {"facet": "IGB_Competenties"}},
         ],
     }
 
-    to:
+    As following:
     {
-        "term1": [{"field": "title"}],
-        "term2": [{"field": "description"}],
+        "params_source": {
+            "term1": {"field": "title"},
+            "term2": {"facet": "IGB_Competenties"},
+        }
     }
+    OR
+    {}
+
+    So that the original mapping the new data appended
     """
     ret = defaultdict(list)
     # extract all params names from the payload (eg: term, credentials)

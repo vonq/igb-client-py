@@ -1,8 +1,8 @@
 from typing import Dict, Set
-from .parse_custom import params_parser
+from .parse_custom import params_extra_parser
 
 
-ROOT_FIELDS_CUSTOM_EXTRACT = {"params": params_parser}
+ROOT_FIELDS_CUSTOM_EXTRACT = {"params": params_extra_parser}
 
 
 def parse_igb_xml_payload(payload: Dict) -> Dict:
